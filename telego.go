@@ -2,6 +2,7 @@ package telego
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 )
 
@@ -10,23 +11,40 @@ var (
 )
 
 type telego struct {
-	token string
+	token  string
+	apiUrl string
 }
 
 func NewTelego(token string) *telego {
 	t := new(telego)
 	t.token = token
+	t.apiUrl = APIURL
 	return t
 }
 
-type Response struct {
-	Ok     bool   `json:"ok"`
-	Result string `json:"result"`
+func (t *telego) ChangeUrl(url string) {
+	t.apiUrl = url + "/bot"
 }
 
 type Update struct {
 	Id      int64   `json:"update_id"`
 	Message Message `json:"message"`
+}
+
+type ResponseUpdate struct {
+	Ok     bool     `json:"ok"`
+	Result []Update `json:"result"`
+}
+
+type Me struct {
+	Id         int64  `json:"id"`
+	First_name string `json:"first_name"`
+	Username   string `json:"username"`
+}
+
+type ResponseMe struct {
+	Ok     bool `json:"ok"`
+	Result Me   `json:"result"`
 }
 
 type User struct {
@@ -126,36 +144,56 @@ type Message struct {
 
 // Gets the update stream for the bot.
 // Currently this only gets
-func (t telego) GetUpdate() []Update {
-	var response struct {
-		Ok     bool     `json:"ok"`
-		Result []Update `json:"result"`
-	}
+func (t telego) GetUpdates() (ResponseUpdate, error) {
+	var response ResponseUpdate
 
-	updateUrl := APIURL + t.token + "/getUpdates"
+	updateUrl := t.apiUrl + t.token + "/getUpdates"
 
 	resp, err := http.Get(updateUrl)
 	if err != nil {
-		panic(err)
+		return ResponseUpdate{}, err
 	}
 	defer resp.Body.Close()
 
 	dec := json.NewDecoder(resp.Body)
 	dec.Decode(&response)
-	return response.Result
+	return response, nil
 }
 
-func (t telego) GetMessageFromId(id int64) Message {
-	updates := t.GetUpdate()
-	for _, v := range updates {
+func (t telego) GetMe() (ResponseMe, error) {
+	var response ResponseMe
+
+	meUrl := t.apiUrl + t.token + "/getMe"
+
+	resp, err := http.Get(meUrl)
+	if err != nil {
+		return ResponseMe{}, err
+	}
+	defer resp.Body.Close()
+
+	dec := json.NewDecoder(resp.Body)
+	dec.Decode(&response)
+	return response, nil
+}
+
+func (t telego) GetMessageFromId(id int64) (Message, error) {
+	updates, err := t.GetUpdates()
+	if err != nil {
+		return Message{}, err
+	}
+
+	for _, v := range updates.Result {
 		if v.Message.Message_id == id {
-			return v.Message
+			return v.Message, nil
 		}
 	}
-	return Message{Text: "No such message"}
+	return Message{}, errors.New("No message found")
 }
 
-func (t telego) GetLastMessage() Message {
-	updates := t.GetUpdate()
-	return updates[len(updates)-1].Message
+func (t telego) GetLastMessage() (Message, error) {
+	updates, err := t.GetUpdates()
+	if err != nil {
+		return Message{}, err
+	}
+	return updates.Result[len(updates.Result)-1].Message, nil
 }
