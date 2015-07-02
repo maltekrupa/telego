@@ -166,3 +166,47 @@ func TestGetMe(t *testing.T) {
 			updates, want)
 	}
 }
+
+func TestSendMessage(t *testing.T) {
+	setup()
+	defer teardown()
+
+	getData := `{
+		"ok":true,
+		"result":{
+			"message_id":231
+			,"from":{
+				"id":987654321,
+				"first_name":"Foo",
+				"username":"FooBot"
+			},
+			"chat":{
+				"id":123456,
+				"first_name":"foo",
+				"last_name":"bar",
+				"username":"foo_bar"
+			},
+			"date":1435836484,
+			"text":"test"
+		}
+	}`
+
+	mux.HandleFunc("/bot"+client.token+"/sendMessage",
+		func(w http.ResponseWriter, r *http.Request) {
+			testMethod(t, r, "GET")
+			fmt.Fprint(w, getData)
+		})
+
+	updates, err := client.SendMessage(123456, "test")
+	if err != nil {
+		t.Errorf("GetMe() returned error: %v", err)
+	}
+
+	want := ResponseSendMessage{true,
+		Message{231, User{987654321, "Foo", "", "FooBot"}, 1435836484, User{123456, "foo", "bar", "foo_bar"}, "test"}}
+
+	if !reflect.DeepEqual(updates, want) {
+		t.Errorf("GetMe() returned %+v, want %+v",
+			updates, want)
+	}
+}
