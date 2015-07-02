@@ -2,9 +2,15 @@
 
 A - yet - not so powerfull library to work with Telegram bots in Golang.
 
+## Installation
+
+`go get github.com/temal-/telego`
+
 ## Example
 
-```
+An echo bot.
+
+```go
 package main
 
 import (
