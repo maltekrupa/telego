@@ -3,7 +3,6 @@ package telego
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
 )
@@ -152,21 +151,19 @@ func (t *telego) ChangeUrl(url string) {
 	t.url = t.apiUrl + t.token
 }
 
-func (t telego) SendMessage(id int, text string) (Message, error) {
+func (t telego) SendMessage(id int, text string) (ResponseSendMessage, error) {
 	var response ResponseSendMessage
 	url := t.url + "/sendMessage?chat_id=" + strconv.Itoa(id) + "&text=" + text
-	fmt.Println(url)
 
 	resp, err := http.Get(url)
 	if err != nil {
-		return Message{}, err
+		return ResponseSendMessage{}, err
 	}
 	defer resp.Body.Close()
 
-	fmt.Println(resp.Body)
 	dec := json.NewDecoder(resp.Body)
 	dec.Decode(&response)
-	return response.Result, nil
+	return response, nil
 }
 
 // Gets the update stream for the bot.
