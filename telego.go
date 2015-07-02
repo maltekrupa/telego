@@ -6,24 +6,10 @@ import (
 	"net/http"
 )
 
-var (
-	APIURL = "https://api.telegram.org/bot"
-)
-
 type telego struct {
 	token  string
 	apiUrl string
-}
-
-func NewTelego(token string) *telego {
-	t := new(telego)
-	t.token = token
-	t.apiUrl = APIURL
-	return t
-}
-
-func (t *telego) ChangeUrl(url string) {
-	t.apiUrl = url + "/bot"
+	url    string
 }
 
 type Update struct {
@@ -140,6 +126,23 @@ type Message struct {
 	Date       int64  `json:"date"`
 	Chat       User   `json:"chat"`
 	Text       string `json:"text"`
+}
+
+var (
+	APIURL = "https://api.telegram.org/bot"
+)
+
+func NewTelego(token string) *telego {
+	t := new(telego)
+	t.token = token
+	t.apiUrl = APIURL
+	t.url = t.apiUrl + t.token
+	return t
+}
+
+func (t *telego) ChangeUrl(url string) {
+	t.apiUrl = url + "/bot"
+	t.url = t.apiUrl + t.token
 }
 
 // Gets the update stream for the bot.
