@@ -3,7 +3,9 @@ package telego
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
+	"strconv"
 )
 
 type telego struct {
@@ -13,7 +15,7 @@ type telego struct {
 }
 
 type Update struct {
-	Id      int64   `json:"update_id"`
+	Id      int     `json:"update_id"`
 	Message Message `json:"message"`
 }
 
@@ -23,7 +25,7 @@ type ResponseUpdate struct {
 }
 
 type Me struct {
-	Id         int64  `json:"id"`
+	Id         int    `json:"id"`
 	First_name string `json:"first_name"`
 	Username   string `json:"username"`
 }
@@ -34,29 +36,29 @@ type ResponseMe struct {
 }
 
 type User struct {
-	Id         int64  `json:"id"`
+	Id         int    `json:"id"`
 	First_name string `json:"first_name"`
 	Last_name  string `json:"last_name"`
 	Username   string `json:"username"`
 }
 
 type GroupChat struct {
-	Id    int64  `json:"id"`
+	Id    int    `json:"id"`
 	Title string `json:"title"`
 }
 
 type PhotoSize struct {
 	File_id   string `json:"file_id"`
-	Width     int64  `json:"width"`
-	Height    int64  `json:"height"`
-	File_size int64  `json:"file_size"`
+	Width     int    `json:"width"`
+	Height    int    `json:"height"`
+	File_size int    `json:"file_size"`
 }
 
 type Audio struct {
 	File_id   string `json:"file_id"`
-	Duration  int64  `json:"duration"`
+	Duration  int    `json:"duration"`
 	Mime_type string `json:"mime_type"`
-	File_size int64  `json:"file_size"`
+	File_size int    `json:"file_size"`
 }
 
 type Document struct {
@@ -64,25 +66,25 @@ type Document struct {
 	Thumb     PhotoSize `json:"thumb"`
 	File_name string    `json:"file_name"`
 	Mime_type string    `json:"mime_type"`
-	File_size int64     `json:"file_size"`
+	File_size int       `json:"file_size"`
 }
 
 type Sticker struct {
 	File_id   string    `json:"file_id"`
-	Width     int64     `json:"width"`
-	Height    int64     `json:"height"`
+	Width     int       `json:"width"`
+	Height    int       `json:"height"`
 	Thumb     PhotoSize `json:"thumb"`
-	File_size int64     `json:"file_size"`
+	File_size int       `json:"file_size"`
 }
 
 type Video struct {
 	File_id   string    `json:"file_id"`
-	Width     int64     `json:"width"`
-	Height    int64     `json:"height"`
-	Duration  int64     `json:"duration"`
+	Width     int       `json:"width"`
+	Height    int       `json:"height"`
+	Duration  int       `json:"duration"`
 	Thumb     PhotoSize `json:"thumb"`
 	Mime_type string    `json:"mime_type"`
-	File_size int64     `json:"file_size"`
+	File_size int       `json:"file_size"`
 	Caption   string    `json:"caption"`
 }
 
@@ -99,7 +101,7 @@ type Location struct {
 }
 
 type UserProfilePhotos struct {
-	Total_count int64         `json:"total_count"`
+	Total_count int           `json:"total_count"`
 	Photos      [][]PhotoSize `json:"photos"`
 }
 
@@ -121,11 +123,16 @@ type ForceReply struct {
 }
 
 type Message struct {
-	Message_id int64  `json:"message_id"`
+	Message_id int    `json:"message_id"`
 	From       User   `json:"from"`
-	Date       int64  `json:"date"`
+	Date       int    `json:"date"`
 	Chat       User   `json:"chat"`
 	Text       string `json:"text"`
+}
+
+type ResponseSendMessage struct {
+	Ok     bool    `json:"ok"`
+	Result Message `json:"result"`
 }
 
 var (
@@ -145,8 +152,25 @@ func (t *telego) ChangeUrl(url string) {
 	t.url = t.apiUrl + t.token
 }
 
+func (t telego) SendMessage(id int, text string) (Message, error) {
+	var response ResponseSendMessage
+	url := t.url + "/sendMessage?chat_id=" + strconv.Itoa(id) + "&text=" + text
+	fmt.Println(url)
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return Message{}, err
+	}
+	defer resp.Body.Close()
+
+	fmt.Println(resp.Body)
+	dec := json.NewDecoder(resp.Body)
+	dec.Decode(&response)
+	return response.Result, nil
+}
+
 // Gets the update stream for the bot.
-// Currently this only gets
+// TODO: Enhance with parameters.
 func (t telego) GetUpdates() (ResponseUpdate, error) {
 	var response ResponseUpdate
 
@@ -179,7 +203,7 @@ func (t telego) GetMe() (ResponseMe, error) {
 	return response, nil
 }
 
-func (t telego) GetMessageFromId(id int64) (Message, error) {
+func (t telego) GetMessageFromId(id int) (Message, error) {
 	updates, err := t.GetUpdates()
 	if err != nil {
 		return Message{}, err
