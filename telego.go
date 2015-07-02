@@ -11,6 +11,7 @@ type telego struct {
 	token  string
 	apiUrl string
 	url    string
+	offset int
 }
 
 type Update struct {
@@ -170,10 +171,15 @@ func (t telego) SendMessage(id int, text string) (ResponseSendMessage, error) {
 // TODO: Enhance with parameters.
 func (t telego) GetUpdates() (ResponseUpdate, error) {
 	var response ResponseUpdate
+	var url string
 
-	updateUrl := t.url + "/getUpdates"
+	if t.offset != 0 {
+		url = t.url + "/getUpdates?offset=" + strconv.Itoa(t.offset+1)
+	} else {
+		url = t.url + "/getUpdates"
+	}
 
-	resp, err := http.Get(updateUrl)
+	resp, err := http.Get(url)
 	if err != nil {
 		return ResponseUpdate{}, err
 	}
@@ -200,24 +206,24 @@ func (t telego) GetMe() (ResponseMe, error) {
 	return response, nil
 }
 
-func (t telego) GetMessageFromId(id int) (Message, error) {
-	updates, err := t.GetUpdates()
-	if err != nil {
-		return Message{}, err
-	}
-
-	for _, v := range updates.Result {
-		if v.Message.Message_id == id {
-			return v.Message, nil
-		}
-	}
-	return Message{}, errors.New("No message found")
-}
-
 func (t telego) GetLastMessage() (Message, error) {
 	updates, err := t.GetUpdates()
 	if err != nil {
 		return Message{}, err
 	}
+	if len(updates.Result) < 1 {
+		return Message{}, errors.New("No updates available")
+	}
 	return updates.Result[len(updates.Result)-1].Message, nil
+}
+
+func (t telego) GetOffset() int {
+	return t.offset
+}
+
+func (t *telego) UpdateOffset() {
+	updates, _ := t.GetUpdates()
+	if len(updates.Result) >= 1 {
+		t.offset = updates.Result[len(updates.Result)-1].Id
+	}
 }
