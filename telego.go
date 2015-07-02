@@ -150,7 +150,7 @@ func (t *telego) ChangeUrl(url string) {
 func (t telego) GetUpdates() (ResponseUpdate, error) {
 	var response ResponseUpdate
 
-	updateUrl := t.apiUrl + t.token + "/getUpdates"
+	updateUrl := t.url + "/getUpdates"
 
 	resp, err := http.Get(updateUrl)
 	if err != nil {
@@ -166,7 +166,7 @@ func (t telego) GetUpdates() (ResponseUpdate, error) {
 func (t telego) GetMe() (ResponseMe, error) {
 	var response ResponseMe
 
-	meUrl := t.apiUrl + t.token + "/getMe"
+	meUrl := t.url + "/getMe"
 
 	resp, err := http.Get(meUrl)
 	if err != nil {
