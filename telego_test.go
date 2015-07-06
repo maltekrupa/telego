@@ -98,8 +98,8 @@ func TestGetUpdates(t *testing.T) {
 
 	want := ResponseUpdate{true,
 		[]Update{
-			Update{805750848, Message{2, User{123456, "foo", "bar", "foo_bar"}, 1435771984, User{123456, "foo", "bar", "foo_bar"}, "testing the messages"}},
-			Update{805750849, Message{3, User{123456, "foo", "bar", "foo_bar"}, 1435771995, User{123456, "foo", "bar", "foo_bar"}, "/start"}},
+			Update{805750848, Message{2, User{123456, "foo", "bar", "foo_bar", ""}, 1435771984, User{123456, "foo", "bar", "foo_bar", ""}, "testing the messages"}},
+			Update{805750849, Message{3, User{123456, "foo", "bar", "foo_bar", ""}, 1435771995, User{123456, "foo", "bar", "foo_bar", ""}, "/start"}},
 		}}
 
 	if !reflect.DeepEqual(updates, want) {
@@ -203,9 +203,9 @@ func TestSendMessage(t *testing.T) {
 	}
 
 	want := ResponseSendMessage{true,
-		Message{231, User{987654321, "Foo", "", "FooBot"}, 1435836484, User{123456, "foo", "bar", "foo_bar"}, "test"}}
+		Message{231, User{987654321, "Foo", "", "FooBot", ""}, 1435836484, User{123456, "foo", "bar", "foo_bar", ""}, "test"}}
 
-	if !reflect.DeepEqual(updates, want) {
+	if !reflect.DeepEqual(updates, &want) {
 		t.Errorf("GetMe() returned %+v, want %+v",
 			updates, want)
 	}

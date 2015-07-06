@@ -5,13 +5,15 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 type telego struct {
-	token  string
-	apiUrl string
-	url    string
-	offset int
+	token          string
+	apiUrl         string
+	url            string
+	offset         int
+	lastSeenOffset int
 }
 
 type Update struct {
@@ -40,6 +42,7 @@ type User struct {
 	First_name string `json:"first_name"`
 	Last_name  string `json:"last_name"`
 	Username   string `json:"username"`
+	Title      string `json:"title"`
 }
 
 type GroupChat struct {
@@ -152,24 +155,24 @@ func (t *telego) ChangeUrl(url string) {
 	t.url = t.apiUrl + t.token
 }
 
-func (t telego) SendMessage(id int, text string) (ResponseSendMessage, error) {
-	var response ResponseSendMessage
+func (t telego) SendMessage(id int, text string) (rsm *ResponseSendMessage, err error) {
 	url := t.url + "/sendMessage?chat_id=" + strconv.Itoa(id) + "&text=" + text
+	url2 := strings.Replace(url, " ", "%20", -1)
 
-	resp, err := http.Get(url)
+	resp, err := http.Get(url2)
 	if err != nil {
-		return ResponseSendMessage{}, err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	dec := json.NewDecoder(resp.Body)
-	dec.Decode(&response)
-	return response, nil
+	dec.Decode(&rsm)
+	return rsm, nil
 }
 
 // Gets the update stream for the bot.
 // TODO: Enhance with parameters.
-func (t telego) GetUpdates() (ResponseUpdate, error) {
+func (t *telego) GetUpdates() (ResponseUpdate, error) {
 	var response ResponseUpdate
 	var url string
 
@@ -187,6 +190,10 @@ func (t telego) GetUpdates() (ResponseUpdate, error) {
 
 	dec := json.NewDecoder(resp.Body)
 	dec.Decode(&response)
+
+	if len(response.Result) >= 1 {
+		t.lastSeenOffset = response.Result[len(response.Result)-1].Id
+	}
 	return response, nil
 }
 
@@ -222,8 +229,5 @@ func (t telego) GetOffset() int {
 }
 
 func (t *telego) UpdateOffset() {
-	updates, _ := t.GetUpdates()
-	if len(updates.Result) >= 1 {
-		t.offset = updates.Result[len(updates.Result)-1].Id
-	}
+	t.offset = t.lastSeenOffset
 }
