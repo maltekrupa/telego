@@ -2,6 +2,8 @@
 
 A - yet - not so powerfull library to work with Telegram bots in Golang.
 
+*THIS PROJECT IS DISCONTINUED BECAUSE I STARTED USING [tucnak/telebot](https://github.com/tucnak/telebot).*
+
 ## Installation
 
 `go get github.com/temal-/telego`
